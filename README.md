@@ -84,8 +84,8 @@ dotnet run --configuration Debug
 
 ### Запуск скомпилированного приложения
 ```bash
-cd HostApp/bin/Debug/net7.0
-./HostApp.exe
+cd HostApp
+./bin/Debug/net7.0/HostApp.exe      
 ```
 
 ## Конфигурация
@@ -100,12 +100,20 @@ cd HostApp/bin/Debug/net7.0
       "Microsoft.Hosting.Lifetime": "Information"
     }
   },
-  "Plugins": {
-    "TestPlugin": {
-      "Name": "MyCustomTestPlugin",
-      "Enabled": true
-    }
-  }
+  "PluginSettings": {
+    "Plugins": [
+      {
+        "Name": "TestPlugin1",
+        "Path": "../TestPlugin/bin/Debug/net7.0/TestPlugin.dll",
+        "Enabled": true
+      },
+      {
+        "Name": "TestPlugin2",
+        "Path": "../TestPlugin/bin/Debug/net7.0/TestPlugin.dll",
+        "Enabled": true
+      }
+    ]
+  },
 }
 ```
 
