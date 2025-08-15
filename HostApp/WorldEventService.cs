@@ -10,7 +10,6 @@ public class WorldEventService : IWorldEventService, IDisposable
 {
     private readonly ILogger<WorldEventService> _logger;
     private readonly Timer _timer;
-    private readonly List<EventHandler<WorldEventArgs>> _subscribers = new();
     private readonly Random _random = new();
     
     public event EventHandler<WorldEventArgs>? WorldUpdated;
@@ -35,15 +34,19 @@ public class WorldEventService : IWorldEventService, IDisposable
         var args = new WorldEventArgs(worldMessage, DateTime.Now);
         _logger.LogInformation("World обновлен: {WorldMessage} в {Timestamp}", args.WorldMessage, args.Timestamp);
         
-        // Вызываем событие
-        WorldUpdated?.Invoke(this, args);
+        // Безопасный вызов события с обработкой ошибок
+        SafeInvokeEvent(WorldUpdated, args);
+    }
+    
+    private void SafeInvokeEvent(EventHandler<WorldEventArgs>? eventHandler, WorldEventArgs args)
+    {
+        if (eventHandler == null) return;
         
-        // Уведомляем всех подписчиков
-        foreach (var subscriber in _subscribers)
+        foreach (EventHandler<WorldEventArgs> handler in eventHandler.GetInvocationList())
         {
             try
             {
-                subscriber(this, args);
+                handler(this, args);
             }
             catch (Exception ex)
             {
@@ -59,13 +62,13 @@ public class WorldEventService : IWorldEventService, IDisposable
     
     public void SubscribeToWorldUpdates(EventHandler<WorldEventArgs> handler)
     {
-        _subscribers.Add(handler);
+        WorldUpdated += handler;
         _logger.LogInformation("Добавлен новый подписчик на обновления World");
     }
     
     public void UnsubscribeFromWorldUpdates(EventHandler<WorldEventArgs> handler)
     {
-        _subscribers.Remove(handler);
+        WorldUpdated -= handler;
         _logger.LogInformation("Удален подписчик с обновлений World");
     }
     

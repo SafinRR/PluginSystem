@@ -10,7 +10,6 @@ public class HelloEventService : IHelloEventService, IDisposable
 {
     private readonly ILogger<HelloEventService> _logger;
     private readonly Timer _timer;
-    private readonly List<EventHandler<TimerEventArgs>> _subscribers = new();
     
     public event EventHandler<TimerEventArgs>? TimerEvent;
     
@@ -28,15 +27,19 @@ public class HelloEventService : IHelloEventService, IDisposable
         var args = new TimerEventArgs("Hello", DateTime.Now);
         _logger.LogInformation("Таймер сработал: {Message} в {Timestamp}", args.Message, args.Timestamp);
         
-        // Вызываем событие
-        TimerEvent?.Invoke(this, args);
+        // Безопасный вызов события с обработкой ошибок
+        SafeInvokeEvent(TimerEvent, args);
+    }
+    
+    private void SafeInvokeEvent(EventHandler<TimerEventArgs>? eventHandler, TimerEventArgs args)
+    {
+        if (eventHandler == null) return;
         
-        // Уведомляем всех подписчиков
-        foreach (var subscriber in _subscribers)
+        foreach (EventHandler<TimerEventArgs> handler in eventHandler.GetInvocationList())
         {
             try
             {
-                subscriber(this, args);
+                handler(this, args);
             }
             catch (Exception ex)
             {
@@ -47,13 +50,13 @@ public class HelloEventService : IHelloEventService, IDisposable
     
     public void SubscribeToTimer(EventHandler<TimerEventArgs> handler)
     {
-        _subscribers.Add(handler);
+        TimerEvent += handler;
         _logger.LogInformation("Добавлен новый подписчик на событие таймера");
     }
     
     public void UnsubscribeFromTimer(EventHandler<TimerEventArgs> handler)
     {
-        _subscribers.Remove(handler);
+        TimerEvent -= handler;
         _logger.LogInformation("Удален подписчик с события таймера");
     }
     
